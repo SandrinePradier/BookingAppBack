@@ -28,6 +28,10 @@ var _moment = require('moment');
 
 var _moment2 = _interopRequireDefault(_moment);
 
+var _validator = require('validator');
+
+var _validator2 = _interopRequireDefault(_validator);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var app = (0, _express2.default)();
@@ -70,8 +74,9 @@ app.post('/', function (req, res) {
 	if (req.body) {
 		var apt = req.body;
 		console.log('apt : ', apt);
+		_validator2.default.isEmail('foo@bar.com');
 		//check if all the requested field of the models are received
-		if (apt.name && apt.mail && apt.time && apt.duration) {
+		if (apt.name && apt.mail && apt.time && apt.duration && _validator2.default.isEmail(apt.mail)) {
 			//get back the datas in a variable
 			var newApt = new _modelapt2.default();
 			newApt.lastname = apt.name;
@@ -114,12 +119,12 @@ app.post('/', function (req, res) {
 			});
 		} else {
 			//j'ai bien un body, mais il manque un des champs, renvoie un 403: il manque des infos pour confirmer le RDV
-			res.status(403).json({ success: false, message: 'Vous devez renseigner un nom et un email' });
+			res.status(403).json({ success: false, message: 'Vous devez renseigner un nom et un email valide' });
 		}
 	}
 	//si je n'ai pas de body
 	else {
-			res.status(500).json({ success: false, message: 'Votre RDV n\'a pas pu être confirmé' });
+			res.status(500).json({ success: false, message: 'Merci de vérifier les données personnelles renseignées' });
 		}
 });
 

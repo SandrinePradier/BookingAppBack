@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import Appointment from './modelapt.js';
 import Slot from './modelslot.js';
 import moment from 'moment';
+import validator from 'validator'
 
 
 let app = express();
@@ -48,8 +49,9 @@ app.post('/', (req, res) => {
 		if (req.body){
 			let apt = req.body;
 			console.log ('apt : ', apt);
+			validator.isEmail('foo@bar.com')
 			//check if all the requested field of the models are received
-			if (apt.name && apt.mail && apt.time && apt.duration){
+			if (apt.name && apt.mail && apt.time && apt.duration && validator.isEmail(apt.mail)){
 				//get back the datas in a variable
 				let newApt = new Appointment;
 				newApt.lastname = apt.name;
@@ -94,12 +96,12 @@ app.post('/', (req, res) => {
 			}
 			else{
 				//j'ai bien un body, mais il manque un des champs, renvoie un 403: il manque des infos pour confirmer le RDV
-				res.status(403).json({success:false, message:'Vous devez renseigner un nom et un email'})
+				res.status(403).json({success:false, message:'Vous devez renseigner un nom et un email valide'})
 			}
 		}
 		//si je n'ai pas de body
 		else{
-			res.status(500).json({success:false, message:'Votre RDV n\'a pas pu être confirmé'})
+			res.status(500).json({success:false, message:'Merci de vérifier les données personnelles renseignées'})
 		}
 })
 
