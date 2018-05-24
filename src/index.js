@@ -106,6 +106,24 @@ app.post('/', (req, res) => {
 })
 
 
+//this route is call from FrontEndPro
+app.get('/clients', (req, res) => {
+	console.log('get route clients is OK');
+	Appointment.find({}, (err, result) => {
+		if (err) {console.log('error in Appointment.find')}
+		if (!result){
+			res.status(404).json({success:false, message:'No Appointment found'})
+		}
+		else {
+			res.status(200).json({success:true, message:'Here is the client list', content:result})
+		}
+	})
+})
+
+
+
+
+
 mongoose.connect('mongodb://localhost:27017/bookingappDB', (err) => {
 	if (err){throw err;}
 	else{

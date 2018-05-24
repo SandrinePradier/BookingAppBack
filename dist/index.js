@@ -128,6 +128,21 @@ app.post('/', function (req, res) {
 		}
 });
 
+//this route is call from FrontEndPro
+app.get('/clients', function (req, res) {
+	console.log('get route clients is OK');
+	_modelapt2.default.find({}, function (err, result) {
+		if (err) {
+			console.log('error in Appointment.find');
+		}
+		if (!result) {
+			res.status(404).json({ success: false, message: 'No Appointment found' });
+		} else {
+			res.status(200).json({ success: true, message: 'Here is the client list', content: result });
+		}
+	});
+});
+
 _mongoose2.default.connect('mongodb://localhost:27017/bookingappDB', function (err) {
 	if (err) {
 		throw err;
