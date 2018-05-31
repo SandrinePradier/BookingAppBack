@@ -10,9 +10,9 @@ var _mongoose2 = _interopRequireDefault(_mongoose);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var Schema = _mongoose2.default.Schema;
+let Schema = _mongoose2.default.Schema;
 
-var appointmentSchema = new Schema({
+let appointmentSchema = new Schema({
 	lastname: {
 		type: String,
 		required: true
@@ -31,6 +31,6 @@ var appointmentSchema = new Schema({
 	}
 });
 
-var Appointment = _mongoose2.default.model('appointment', appointmentSchema);
+let Appointment = _mongoose2.default.model('appointment', appointmentSchema);
 
 exports.default = Appointment;

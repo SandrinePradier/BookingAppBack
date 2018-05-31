@@ -1,5 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+// import babel-polyfill from 'babel-polyfill'
 import morgan from 'morgan';
 import mongoose from 'mongoose';
 import Appointment from './modelapt.js';
@@ -25,104 +26,290 @@ app.use(function (req, res, next) {
 });
 
 
-//this route is called from home and will send back the slots.
+
+app.use((error, req, res, next) => {
+	res.status(error.status || 500);
+	res.json({
+		error:{
+			message: error.message
+		}
+	})
+})
+
+
+
+
+
+// *********FRONT_END Routes************
+
+
+//this route is called from calendar and will send back the slots.
 app.get('/', (req, res) => {
 	console.log('get route is OK');
 	Slot.find({}, (err, result) => {
 		if (err) {console.log('error in Slot.find')}
 		if (!result){
-			res.status(200).json({success:true, message:'any time available for now'})
+			res.status(204).send({success:true, message:'sorry no availability has been set up'})
+			//204: requete comprise, mais rien à renvoyer
 		}
 		else {
-			res.status(200).json({success:true, message:'Here are the slots', content:result})
+			res.status(200).send({success:true, message:'Here are the slots', content:result})
 		}
 	})
 })
 
 
 //this route is called from authentication after appointment time is selected,
-// it will check if no appointment at this time, then store apt i DB
-// record a slot for the time.
-// and return confirmation
+// it will check if slot is well available, and then record apt and amend slot status
 app.post('/', (req, res) => {
 	//check that the body exists
 		if (req.body){
 			let apt = req.body;
-			console.log ('apt : ', apt);
-			validator.isEmail('foo@bar.com')
+			// console.log ('apt : ', apt);
 			//check if all the requested field of the models are received
-			if (apt.name && apt.mail && apt.time && apt.duration && validator.isEmail(apt.mail)){
-				//get back the datas in a variable
-				let newApt = new Appointment;
-				newApt.lastname = apt.name;
-				newApt.email = apt.mail;
-				newApt.time = apt.time;
-				newApt.duration = apt.duration;
-
-				let newSlot = new Slot;
-				newSlot.start = moment(apt.time);
-				newSlot.duration = apt.duration;
-				newSlot.end = moment(newSlot.start).add(apt.duration, 'minutes');
-				newSlot.status = 'booked';
-				console.log('newSlot:', newSlot);
-
-				//check if no appointment already at that time
-				Appointment.findOne({'time': apt.time}, (err, result) => {
-					if (err) { console.log('error in Appointment.findOne')}
-					if (result){
-						// if matching found, means already an appontment at that time
-						//sending back a 403 error ( server has understood the request, but reject the execution)
-						res.status(403).json({success:false, message:'Le RDV ne peut être confirmé car cet horaire n\'est pas disponible'})
-					}
-					else{
-						//if no matching, means the apt can be save in DB
-						newApt.save(function(err){
-							if(err){
-								res.status(403).json({success:false, message:'Votre RDV n\'a pas été pris en compte dans notre agenda. Merci de réessayer'})
+			if (apt.name && apt.mail && apt.time && apt.duration && validator.isEmail(apt.mail) && apt.slotId) {
+				
+			//step1 - check that slot is well available:
+				Slot.findOne({'_id': apt.slotId}, (err, result) => {
+						console.log('step1: matching slot :' ,result);
+						if (err) console.log('test 1');
+						if (!result){
+							console.log('test 2');
+							//no matching id found, means the time is not 'available' for appointment
+							res.status(403).send({success:false, message:'1 - Le RDV ne peut être confirmé car cet horaire n\'est pas disponible'})
+						};
+						if (result){
+							console.log('test 3');
+							if (result.status == 'booked'){
+								console.log('sorry slot is booked');
+								res.status(403).send({success:false, message:'2 -Le RDV ne peut être confirmé car cet horaire n\'est pas disponible'})
 							}
-							else{
-								newSlot.save(function(err){
-									if (err){
-										res.status(403).json({success:false, message:'Votre RDV n\'a pas été pris en compte dans notre agenda. Merci de réessayer'})
-									}
-									else{
-										res.status(200).json({success:true, message:'Votre RDV a bien été confirmé'})
-									}
-								})
-							}	
-						})
-					}
+							if ( result.status == 'available'){
+								
+								//code qui marche sans async
+								// createNewApt(apt);
+								// updateSlot(apt, 'booked');
+								// res.status(200).send({success:true, message:'6 -Votre RDV a bien été confirmé'})
+							
+								//test async await qui marche aussi
+								confirmApt(apt, 'booked', res);
+							}
+						}
 				})
 			}
 			else{
 				//j'ai bien un body, mais il manque un des champs, renvoie un 403: il manque des infos pour confirmer le RDV
-				res.status(403).json({success:false, message:'Vous devez renseigner un nom et un email valide'})
+				res.status(403).send({success:false, message:'8 - Vous devez renseigner un nom et un email valide'})
 			}
 		}
 		//si je n'ai pas de body
 		else{
-			res.status(500).json({success:false, message:'Merci de vérifier les données personnelles renseignées'})
+			res.status(500).send({success:false, message:'9 -Merci de vérifier les données personnelles renseignées'})
 		}
-})
+});
 
 
-//this route is call from FrontEndPro
+async function createNewApt(apt){
+	console.log('createNewApt called');
+	let newApt = new Appointment;
+	newApt.lastname = apt.name;
+	newApt.email = apt.mail;
+	newApt.time = apt.time;
+	newApt.duration = apt.duration;
+	newApt.save(function(err, created){
+		if(err){
+			return err;
+		}
+		else{
+			console.log('from createNewApt : newApt well saved,', created);
+		}
+	})
+}
+
+async function updateSlot(apt, newStatus){
+	console.log('updateSlot called');
+	Slot.findOne({'_id': apt.slotId}, (err, updated) => {
+		if (err){
+			return err
+		}
+		else {
+			updated.status = newStatus;
+			updated.save(function(err){
+				if (err){
+					return err
+				}
+				else {
+				console.log('from updateSlot: here is the slot to updated:', updated);
+				}
+			});
+		}
+	})
+}
+
+function sendReply(a,b, res){
+		res.status(200).send({success:true, message:'6 -Votre RDV a bien été confirmé'})
+}
+
+
+async function confirmApt(apt, booked, res) {
+	let newAptcreated = await createNewApt(apt);
+	let slotUpdated = await updateSlot(apt, booked);
+	sendReply(newAptcreated, slotUpdated, res);
+	console.log('async works');
+	
+}
+
+// *******test async await qui fonctionne *****
+
+// async function hello (err){
+// 	if (err) {
+// 		return err;
+// 	}
+// 	else {
+// 		console.log('ok hello!');
+// 		return 3;
+// 	}
+// }
+
+// async function hellosuite(err){
+// 	if (err) {
+// 		return err;
+// 	}
+// 	else {
+// 		console.log('ok hellosuite!');
+// 		return 2;
+// 	}
+// }
+
+// function sum(a,b){
+// 	let somme = a+b;
+// 	console.log('somme', somme);
+// 	return somme;
+// }
+
+// async function test() {
+// 	let nombre1 = await hello();
+// 	let nombre2 = await hellosuite();
+// 	let total = sum(nombre1, nombre2);
+// 	console.log('total: ', total);
+// console.log('async works');
+// }
+
+
+
+
+// *********FRONT_END_PRO Routes************
+
+
 app.get('/clients', (req, res) => {
-	console.log('get route clients is OK');
+	console.log('get route clients called');
 	Appointment.find({}, (err, result) => {
 		if (err) {console.log('error in Appointment.find')}
 		if (!result){
-			res.status(404).json({success:false, message:'No Appointment found'})
+			res.status(404).send({success:false, message:'No Appointment found'})
 		}
 		else {
-			res.status(200).json({success:true, message:'Here is the client list', content:result})
+			res.status(200).send({success:true, message:'Here is the client list', content:result})
 		}
 	})
 })
 
+app.get('/slots', (req, res) => {
+	console.log('get route slots called');
+	Slot.find({}, (err, result) => {
+		if (err) {console.log('error in slot.find')}
+		if (!result){
+			res.status(404).send({success:false, message:'No Slot found'})
+		}
+		else {
+			res.status(200).send({success:true, message:'Here is the Slot list', content:result})
+		}
+	})
+})
+
+app.post('/availabilities', (req, res) => {
+	console.log('post route availabilities called, req.body:', req.body);
+	let slotlist = req.body;
+	let slotlistavailable = slotlist;
+	Slot.find({'status': 'booked'}, (err, result) => {
+		if (err) {console.log('error')};
+		if (!result){
+			console.log(' CAS !RESULT: je vais enregistrer tous les slots envoyés');
+			for (let i=0; i<slotlist.length; i++){
+				let newSlot = new Slot;
+				newSlot.start = slotlist[i].start;
+				newSlot.duration = slotlist[i].duration;
+				newSlot.end = slotlist[i].end;
+				newSlot.status = slotlist[i].status;
+				console.log('newSlot:', newSlot);
+				newSlot.save(function(err){
+					if(err){
+						console.log('cas !result: error when saving');
+						return err;
+					}
+					else {
+						console.log('newSlot saved')
+					}
+				});
+			}
+			console.log('headers: ', res.headers);
+			console.log('res.headersSent:', res.headersSent)
+			res.status(200).send({success:true, message:"NO CONFLICT as no booked slots in the DB: new slot well saved"})	
+		}
+		if (result){
+			console.log('CAS RESULT : voici les slots booked: ', result)
+			console.log('je vais vérifier si certains slots booked sont des duplicates avec la liste du body');
+			console.log('slotlistlength: ', slotlist.length);
+			
+				for (let j=0; j<result.length; j++){
+					for (let i=0; i<slotlist.length; i++){
+						console.log('slotlist[i]: ', slotlist[i])
+						if (slotlist[i].start == result[j].start && slotlist[i].duration == result[j].duration){
+							console.log('matching slots: ', slotlist[i]);
+							slotlistavailable.splice(i,1);
+						}
+						else{
+							console.log('no matching found');
+						}
+					}
+				}
+				console.log('slotlistavailable length', slotlistavailable.length);
+
+				for (let k=0; k<slotlistavailable.length; k++){
+
+					// create new slot object
+					let newSlot = new Slot;
+					newSlot.start = slotlistavailable[k].start;
+					newSlot.duration = slotlistavailable[k].duration;
+					newSlot.end = slotlistavailable[k].end;
+					newSlot.status = slotlistavailable[k].status;
+					console.log('newSlot:', newSlot);
+					
+					// save slot in db
+					newSlot.save(function(err){
+						if(err){
+							console.log('error RESULT when saving');
+							return err
+						}
+						else {
+							console.log('newSlot saved')
+						}
+					});
+				}
+			console.log('res.headersSent:', res.headersSent)
+			res.status(200).send({success:true, message:"NO CONFLICT: new slot 'available' well saved"})
+		}
+	})	
+});
 
 
 
+//handling error in case wrong url
+// app.use((req, res, next) =>{
+// 	const error = new Error('Not found');
+// 	error.status = 404;
+// 	next(error);
+// })
 
 mongoose.connect('mongodb://localhost:27017/bookingappDB', (err) => {
 	if (err){throw err;}
@@ -133,3 +320,5 @@ mongoose.connect('mongodb://localhost:27017/bookingappDB', (err) => {
 		});
 	}
 })
+
+

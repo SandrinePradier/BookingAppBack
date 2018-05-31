@@ -18,7 +18,7 @@ let slotSchema = new Schema({
 	status : {
 		type: String,
 		required: true
-	}
+	},
 })
 
 let Slot = mongoose.model('slot', slotSchema);
