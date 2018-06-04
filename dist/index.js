@@ -71,10 +71,10 @@ app.get('/', (req, res) => {
 			console.log('error in Slot.find');
 		}
 		if (!result) {
-			res.status(204).send({ success: true, message: 'sorry no availability has been set up' });
+			res.status(204).send({ success: true, message: 'Désolé, aucune disponibilité n\'a été paramétrée' });
 			//204: requete comprise, mais rien à renvoyer
 		} else {
-			res.status(200).send({ success: true, message: 'Here are the slots', content: result });
+			res.status(200).send({ success: true, message: 'Voici les slots', content: result });
 		}
 	});
 });
@@ -85,24 +85,24 @@ app.post('/', (req, res) => {
 	//check that the body exists
 	if (req.body) {
 		let apt = req.body;
-		// console.log ('apt : ', apt);
+		console.log('apt : ', apt);
 		//check if all the requested field of the models are received
-		if (apt.name && apt.mail && apt.time && apt.duration && _validator2.default.isEmail(apt.mail) && apt.slotId) {
+		if (apt.aptName && apt.aptEmail && apt.aptTime && apt.aptDuration && _validator2.default.isEmail(apt.aptEmail) && apt.aptSlot._id) {
 
 			//step1 - check that slot is well available:
-			_modelslot2.default.findOne({ '_id': apt.slotId }, (err, result) => {
+			_modelslot2.default.findOne({ '_id': apt.aptSlot._id }, (err, result) => {
 				console.log('step1: matching slot :', result);
 				if (err) console.log('test 1');
 				if (!result) {
 					console.log('test 2');
 					//no matching id found, means the time is not 'available' for appointment
-					res.status(403).send({ success: false, message: '1 - Le RDV ne peut être confirmé car cet horaire n\'est pas disponible' });
+					res.status(403).send({ success: false, message: 'Le RDV ne peut être confirmé car cet horaire n\'est pas disponible' });
 				};
 				if (result) {
 					console.log('test 3');
 					if (result.status == 'booked') {
 						console.log('sorry slot is booked');
-						res.status(403).send({ success: false, message: '2 -Le RDV ne peut être confirmé car cet horaire n\'est pas disponible' });
+						res.status(403).send({ success: false, message: 'Le RDV ne peut être confirmé car cet horaire n\'est pas disponible' });
 					}
 					if (result.status == 'available') {
 
@@ -118,22 +118,22 @@ app.post('/', (req, res) => {
 			});
 		} else {
 			//j'ai bien un body, mais il manque un des champs, renvoie un 403: il manque des infos pour confirmer le RDV
-			res.status(403).send({ success: false, message: '8 - Vous devez renseigner un nom et un email valide' });
+			res.status(403).send({ success: false, message: 'Vous devez renseigner un nom et un email valide' });
 		}
 	}
 	//si je n'ai pas de body
 	else {
-			res.status(500).send({ success: false, message: '9 -Merci de vérifier les données personnelles renseignées' });
+			res.status(500).send({ success: false, message: 'Merci de vérifier les données personnelles renseignées' });
 		}
 });
 
 async function createNewApt(apt) {
 	console.log('createNewApt called');
 	let newApt = new _modelapt2.default();
-	newApt.lastname = apt.name;
-	newApt.email = apt.mail;
-	newApt.time = apt.time;
-	newApt.duration = apt.duration;
+	newApt.lastname = apt.aptName;
+	newApt.email = apt.aptEmail;
+	newApt.time = apt.aptTime;
+	newApt.duration = apt.aptDuration;
 	newApt.save(function (err, created) {
 		if (err) {
 			return err;
@@ -145,7 +145,7 @@ async function createNewApt(apt) {
 
 async function updateSlot(apt, newStatus) {
 	console.log('updateSlot called');
-	_modelslot2.default.findOne({ '_id': apt.slotId }, (err, updated) => {
+	_modelslot2.default.findOne({ '_id': apt.aptSlot._id }, (err, updated) => {
 		if (err) {
 			return err;
 		} else {
@@ -162,7 +162,7 @@ async function updateSlot(apt, newStatus) {
 }
 
 function sendReply(a, b, res) {
-	res.status(200).send({ success: true, message: '6 -Votre RDV a bien été confirmé' });
+	res.status(200).send({ success: true, message: 'Votre RDV a bien été confirmé' });
 }
 
 async function confirmApt(apt, booked, res) {
@@ -171,43 +171,6 @@ async function confirmApt(apt, booked, res) {
 	sendReply(newAptcreated, slotUpdated, res);
 	console.log('async works');
 }
-
-// *******test async await qui fonctionne *****
-
-// async function hello (err){
-// 	if (err) {
-// 		return err;
-// 	}
-// 	else {
-// 		console.log('ok hello!');
-// 		return 3;
-// 	}
-// }
-
-// async function hellosuite(err){
-// 	if (err) {
-// 		return err;
-// 	}
-// 	else {
-// 		console.log('ok hellosuite!');
-// 		return 2;
-// 	}
-// }
-
-// function sum(a,b){
-// 	let somme = a+b;
-// 	console.log('somme', somme);
-// 	return somme;
-// }
-
-// async function test() {
-// 	let nombre1 = await hello();
-// 	let nombre2 = await hellosuite();
-// 	let total = sum(nombre1, nombre2);
-// 	console.log('total: ', total);
-// console.log('async works');
-// }
-
 
 // *********FRONT_END_PRO Routes************
 
