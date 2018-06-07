@@ -12,12 +12,12 @@ let router = express.Router();
 
 
 // Home
-router.get('/', (req, res) => {
-	console.log('Welcome to our App');
-	helpers.response.ok.message = 'Welcome to our App';
-	helpers.response.ok.tokenaccess = 'Token not required';
-	res.status(200).send(helpers.response.ok);
-});
+// router.get('/', (req, res) => {
+// 	console.log('Welcome to our App');
+// 	helpers.response.ok.message = 'Welcome to our App';
+// 	helpers.response.ok.tokenaccess = 'Token not required';
+// 	res.status(200).send(helpers.response.ok);
+// });
 
 
 // create a user
@@ -67,13 +67,13 @@ router.post('/signup', (req, res) => {
     	}
     	else {
     		helpers.response.error.tokenaccess = 'Token not required';
-    		helpers.response.error.message = 'Your username should be a valid email';
+    		helpers.response.error.message = 'Username should be a valid email';
     		res.status(412).send(helpers.response.error);
     	}
     }
     else {
     	helpers.response.error.tokenaccess = 'Token not required';
-    	helpers.response.error.message = 'You should provide all the required fields';
+    	helpers.response.error.message = 'Missing required fields';
     	res.status(412).send(helpers.response.error);
     }
 });
@@ -128,10 +128,9 @@ router.post('/login', (req, res) => {
 	            }
 	        }
 	    }));
-	    
     } else {
     	helpers.response.error.tokenaccess = 'Token not required';
-    	helpers.response.error.message = 'You should fill in username and password to login';
+    	helpers.response.error.message = 'Missing required fields';
     	res.status(401).send(helpers.response.error);
     }
 
@@ -139,3 +138,6 @@ router.post('/login', (req, res) => {
 
 
 export default router;
+
+
+

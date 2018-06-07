@@ -15,11 +15,11 @@ router.get('/', (req, res) => {
 	Slot.find({}, (err, result) => {
 		if (err) {console.log('error in Slot.find')}
 		if (!result){
-			res.status(204).send({success:true, message:'Désolé, aucune disponibilité n\'a été paramétrée'})
+			res.status(204).send({success:true, message:'No availabilities'})
 			//204: requete comprise, mais rien à renvoyer
 		}
 		else {
-			res.status(200).send({success:true, message:'Voici les slots', content:result})
+			res.status(200).send({success:true, message:'Here are the slots', content:result})
 		}
 	})
 })
@@ -42,13 +42,13 @@ router.post('/', (req, res) => {
 						if (!result){
 							console.log('test 2');
 							//no matching id found, means the time is not 'available' for appointment
-							res.status(403).send({success:false, message:'Le RDV ne peut être confirmé car cet horaire n\'est pas disponible'})
+							res.status(409).send({success:false, message:'Time not available'})
 						};
 						if (result){
 							console.log('test 3');
 							if (result.status == 'booked'){
 								console.log('sorry slot is booked');
-								res.status(403).send({success:false, message:'Le RDV ne peut être confirmé car cet horaire n\'est pas disponible'})
+								res.status(409).send({success:false, message:'Time not available'})
 							}
 							if ( result.status == 'available'){
 								
@@ -65,12 +65,12 @@ router.post('/', (req, res) => {
 			}
 			else{
 				//j'ai bien un body, mais il manque un des champs, renvoie un 403: il manque des infos pour confirmer le RDV
-				res.status(403).send({success:false, message:'Vous devez renseigner un nom et un email valide'})
+				res.status(403).send({success:false, message:'unvalid fields'})
 			}
 		}
 		//si je n'ai pas de body
 		else{
-			res.status(500).send({success:false, message:'Merci de vérifier les données personnelles renseignées'})
+			res.status(400).send({success:false, message:'missing fields'})
 		}
 });
 
