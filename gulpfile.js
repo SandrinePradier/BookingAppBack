@@ -5,6 +5,7 @@ var babelpolyfill = require('babel-polyfill');
 gulp.task('babel', function(){
 	console.log('launch of babel task');
 	return gulp.src('src/**/*.js')
+	// return gulp.src('src')
 	.pipe(babel({
 		presets:[['env', {
 			"targets": {

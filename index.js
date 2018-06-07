@@ -1,12 +1,19 @@
 import express from 'express';
+import mongoose from 'mongoose';
+
+import User from './modules/professional/auth/modelauth.js'
 
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
 
-import mongoose from 'mongoose';
 import moment from 'moment';
 import validator from 'validator';
 
+import dotEnv from 'dotenv';
+// Init .env
+// Il faut absolement declarer la config de dotenv immediatement
+// Pour que les process.env.VARIABLE soient utilisable depuis les imports (de routes)
+dotEnv.config();
 
 import routerAuth from './modules/professional/auth/routesauth.js';
 import routerApt from './modules/professional/main/routesapt.js';
@@ -16,12 +23,11 @@ import routerClient from './modules/client/routesclient.js';
 //here we will import our modules for routes
 
 let app = express();
-let port = '2707';
+
+app.use(morgan('dev'));
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
-
-app.use(morgan('dev'));
 
 // CORS cross-origin
 app.use(function (req, res, next) {
@@ -48,11 +54,10 @@ app.use('/slot', routerSlot);
 app.use('/client', routerClient);
 
 
-
-
-mongoose.connect('mongodb://localhost:27017/bookingappDB', (err) => {
+mongoose.connect(process.env.DB, (err) => {
 	if (err){throw err;}
 	else{
+		let port = process.env.PORT || '2707';
 		console.log('the data base is connected');
 		app.listen(port, () => {
 		console.log ('app running and listening to port' + port);
@@ -60,4 +65,20 @@ mongoose.connect('mongodb://localhost:27017/bookingappDB', (err) => {
 	}
 })
 
+
+// Seeder 1st time / to leave commented
+// let user = new User({
+// 	username: 'pro@gmail.com',
+// 	password: '123',
+// })
+
+// user.save(function(err, result){
+// 	if (err){
+// 		console.log('error');
+// 	}
+// 	else{
+// 		console.log('Seeder user saved');
+// 		mongoose.disconnect();
+// 	}
+// })
 

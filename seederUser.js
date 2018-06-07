@@ -1,8 +1,11 @@
+require('./seederUser')
+
+
 import mongoose from 'mongoose';
 import User from './modules/professional/auth/modelauth.js'
 
 
-mongoose.connect('mongodb://localhost:27017/bookingappDB', (err) => {
+mongoose.connect('process.env.DB', (err) => {
 	if (err){throw err;}
 	else{
 		console.log('the data base is connected');
@@ -25,4 +28,6 @@ user.save(function(err, result){
 		mongoose.disconnect();
 	}
 })
+
+
 
